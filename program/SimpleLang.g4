@@ -5,7 +5,9 @@ prog: stat+ ;
 stat: expr NEWLINE ;
 
 expr: expr op=('*'|'/') expr       # MulDiv
+    | expr op='%' expr             # Mod
     | expr op=('+'|'-') expr       # AddSub
+    | expr op='==' expr            # Equality
     | INT                          # Int
     | FLOAT                        # Float
     | STRING                       # String

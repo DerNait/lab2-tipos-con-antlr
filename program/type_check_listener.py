@@ -15,8 +15,21 @@ class TypeCheckListener(SimpleLangListener):
     left_type = self.types[ctx.expr(0)]
     right_type = self.types[ctx.expr(1)]
     if not self.is_valid_arithmetic_operation(left_type, right_type):
-      self.errors.append(f"Unsupported operand types for * or /: {left_type} and {right_type}")
-    self.types[ctx] = FloatType() if isinstance(left_type, FloatType) or isinstance(right_type, FloatType) else IntType()
+      self.errors.append(
+        f"Unsupported operand types for {ctx.op.text}: {left_type} and {right_type}; "
+        "arithmetic operations require numeric operands"
+      )
+    self.types[ctx] = self.numeric_result(left_type, right_type)
+
+  def exitMod(self, ctx: SimpleLangParser.ModContext):
+    left_type = self.types[ctx.expr(0)]
+    right_type = self.types[ctx.expr(1)]
+    if not isinstance(left_type, IntType) or not isinstance(right_type, IntType):
+      self.errors.append(
+        f"Unsupported operand types for %: {left_type} and {right_type}; "
+        "modulo requires int and int"
+      )
+    self.types[ctx] = IntType()
 
   def enterAddSub(self, ctx: SimpleLangParser.AddSubContext):
     pass
@@ -25,8 +38,21 @@ class TypeCheckListener(SimpleLangListener):
     left_type = self.types[ctx.expr(0)]
     right_type = self.types[ctx.expr(1)]
     if not self.is_valid_arithmetic_operation(left_type, right_type):
-      self.errors.append(f"Unsupported operand types for + or -: {left_type} and {right_type}")
-    self.types[ctx] = FloatType() if isinstance(left_type, FloatType) or isinstance(right_type, FloatType) else IntType()
+      self.errors.append(
+        f"Unsupported operand types for {ctx.op.text}: {left_type} and {right_type}; "
+        "arithmetic operations require numeric operands"
+      )
+    self.types[ctx] = self.numeric_result(left_type, right_type)
+
+  def exitEquality(self, ctx: SimpleLangParser.EqualityContext):
+    left_type = self.types[ctx.expr(0)]
+    right_type = self.types[ctx.expr(1)]
+    if not self.is_valid_equality_operation(left_type, right_type):
+      self.errors.append(
+        f"Unsupported operand types for ==: {left_type} and {right_type}; "
+        "equality requires numeric operands or two operands of the same type"
+      )
+    self.types[ctx] = BoolType()
 
   def enterInt(self, ctx: SimpleLangParser.IntContext):
     self.types[ctx] = IntType()
@@ -47,6 +73,17 @@ class TypeCheckListener(SimpleLangListener):
     self.types[ctx] = self.types[ctx.expr()]
 
   def is_valid_arithmetic_operation(self, left_type, right_type):
-    if isinstance(left_type, (IntType, FloatType)) and isinstance(right_type, (IntType, FloatType)):
+    return (
+      isinstance(left_type, (IntType, FloatType))
+      and isinstance(right_type, (IntType, FloatType))
+    )
+
+  def is_valid_equality_operation(self, left_type, right_type):
+    if self.is_valid_arithmetic_operation(left_type, right_type):
       return True
-    return False
+    return type(left_type) is type(right_type)
+
+  def numeric_result(self, left_type, right_type):
+    if isinstance(left_type, FloatType) or isinstance(right_type, FloatType):
+      return FloatType()
+    return IntType()
