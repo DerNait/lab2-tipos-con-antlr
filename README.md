@@ -1,48 +1,28 @@
-# 🧪 Laboratorio 2: Sistema de Tipos con ANTLR
+# Laboratorio 2: Sistema de Tipos con ANTLR
 
-## 📋 Descripción General
+## Video
 
-En este laboratorio trabajarás con **ANTLR**, un generador de analizadores sintácticos. Hemos proporcionado un `Dockerfile` para ayudarte a configurar el entorno rápidamente. Utilizaremos Python para hacer pruebas, ya que es más sencillo que Java para pruebas pequeñas.
+[Ver demostración del laboratorio en YouTube](https://youtu.be/W7eN0Ss0vDM)
 
-Experimentarás con un sistema de tipos básico, extenderás una gramática y completarás el sistema de tipos. Con ello, aprenderás sobre la marcha lo básico al utilizar sistemas de tipos en el análisis semántico.
+## Cambios implementados
 
-* **Modalidad: Individual**
+Se extendió la gramática `SimpleLang.g4` con dos operaciones:
 
-## 🧰 Instrucciones de Configuración
+- `%`: operación de módulo válida únicamente entre dos valores `int`. Su resultado es `int`.
+- `==`: comparación de igualdad válida entre dos valores numéricos o dos valores del mismo tipo. Su resultado es `bool`.
 
-1. **Construir y Ejecutar el Contenedor Docker**Desde el directorio raíz de este laboratorio, ejecuta el siguiente comando para construir la imagen y lanzar un contenedor interactivo:
+Las reglas se implementaron utilizando los dos recorridos solicitados:
 
-   ```bash
-   docker build --rm . -t lab2-image && docker run --rm -ti -v "$(pwd)/program":/program lab2-image
-   ```
-2. **Entender el Entorno**
+- `TypeCheckVisitor`, mediante el patrón Visitor.
+- `TypeCheckListener`, mediante el patrón Listener y propagación de tipos.
 
-   - El directorio `program` se monta dentro del contenedor.
-   - Este contiene la **gramática de ANTLR**, un archivo `Driver.py` (punto de entrada principal) y un archivo `program_test.txt` (entrada de prueba).
-   - En este caso usamos un Visitor para visitar los nodos del árbol y aplicar análisis semántico.
-   - También se  un Listener para este efecto.
-3. **Generar Archivos de Lexer y Parser:** Dentro del contenedor, compila la gramática ANTLR a Python con:
+Ambas implementaciones acumulan los conflictos encontrados y producen los mismos mensajes de validación.
 
-   ```bash
-   antlr -Dlanguage=Python3 -visitor SimpleLang.g4			*** Esto es para utilizar un Visitor ***
-   antlr -Dlanguage=Python3 -listener SimpleLang.g4		*** Y esto es para utilizar un Listener ***
-   ```
-4. **Ejecutar el Analizador**
-   Usa el driver para analizar el archivo de prueba:
+## Pruebas
 
-   ```bash
-   python3 Driver.py program_test_pass.txt
-   python3 DriverListener.py program_test_pass.txt
-   ```
+Se conservaron los archivos de prueba originales y se agregaron:
 
-   - ✅ Si el archivo es sintácticamente correcto y, además, no hay problemas de tipo, **se mostrará que la validación de tipos fue exitosa**.
-   - ❌ Si existen errores sintácticos, o errores de tipo, ANTLR los mostrará en la consola.
+- `program_test_extended_pass.txt`: casos válidos de módulo e igualdad.
+- `program_test_extended_no_pass.txt`: conflictos con módulo, igualdad y operaciones aritméticas entre tipos incompatibles.
 
-## 📋 Entregables
-
-- **Deben utilizar ambos Visitor y Listener para realizar las actividades de este lab.**
-- Analice la ejecución con los archivos provistos, comente acerca de porqué el archivo "pass" si "pasa" y por qué el archivo "no pass" pues, "no pasa" lol.
-- Extienda la gramática de ANTLR para incluir otras dos operaciones, las que sean de su agrado.
-- Ahora extienda más el sistema de tipos para validar al menos otros 3 conflictos de tipos.
-- **Video de YouTube no listado** (pero público) con los resultados de ejecutar los puntos anteriores y sus comentarios.
-- Repo de Github con todo su código.
+El entorno Docker utiliza ANTLR 4.13.1 tanto para generar el Lexer y Parser como para ejecutar el runtime de Python.
